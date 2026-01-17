@@ -16,6 +16,7 @@ class TFileOperationProgressType;
 class TCustomFileSystem;
 class TTunnelThread;
 class TSecureShell;
+class TWebSocketProxyServer;
 struct TCalculateSizeParams;
 struct TOverwriteFileParams;
 struct TSynchronizeData;
@@ -208,6 +209,7 @@ private:
   TTunnelUI * FTunnelUI;
   int FTunnelLocalPortNumber;
   UnicodeString FTunnelError;
+  TWebSocketProxyServer * FWebSocketProxy;
   TQueryUserEvent FOnQueryUser;
   TPromptUserEvent FOnPromptUser;
   TDisplayBannerEvent FOnDisplayBanner;
