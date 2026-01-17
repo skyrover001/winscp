@@ -5935,6 +5935,10 @@ int __fastcall DefaultPort(TFSProtocol FSProtocol, TFtps Ftps)
       }
       break;
 
+    case fsHTTP:
+      Result = HTTPPortNumber;
+      break;
+
     default:
       if (IsSshProtocol(FSProtocol))
       {
