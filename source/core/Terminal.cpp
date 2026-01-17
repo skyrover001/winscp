@@ -20,6 +20,7 @@
 #include "FtpFileSystem.h"
 #include "WebDAVFileSystem.h"
 #include "S3FileSystem.h"
+#include "HttpProxyFileSystem.h"
 #include "TextsCore.h"
 #include "HelpCore.h"
 #include "CoreMain.h"
@@ -1533,6 +1534,14 @@ void __fastcall TTerminal::Open()
               FFileSystem->Open();
               Log->AddSeparator();
               LogEvent(L"Using S3 protocol.");
+            }
+            else if (SessionData->FSProtocol == fsHTTP)
+            {
+              FFSProtocol = cfsHTTP;
+              FFileSystem = new THttpProxyFileSystem(this);
+              FFileSystem->Open();
+              Log->AddSeparator();
+              LogEvent(L"Using HTTP protocol.");
             }
             else
             {
