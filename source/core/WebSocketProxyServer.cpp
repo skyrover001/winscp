@@ -179,7 +179,15 @@ bool __fastcall TWebSocketProxyServer::AuthenticateHttp()
   }
   
   // Prepare JSON body: {"username":"xxx","password":"xxx"}
-  UnicodeString JsonBody = L"{\"username\":\"" + FUserName + L"\",\"password\":\"" + FPassword + L"\"}";
+  // Escape special characters in username and password
+  UnicodeString EscapedUserName = FUserName;
+  UnicodeString EscapedPassword = FPassword;
+  EscapedUserName = StringReplace(EscapedUserName, L"\\", L"\\\\", TReplaceFlags() << rfReplaceAll);
+  EscapedUserName = StringReplace(EscapedUserName, L"\"", L"\\\"", TReplaceFlags() << rfReplaceAll);
+  EscapedPassword = StringReplace(EscapedPassword, L"\\", L"\\\\", TReplaceFlags() << rfReplaceAll);
+  EscapedPassword = StringReplace(EscapedPassword, L"\"", L"\\\"", TReplaceFlags() << rfReplaceAll);
+  
+  UnicodeString JsonBody = L"{\"username\":\"" + EscapedUserName + L"\",\"password\":\"" + EscapedPassword + L"\"}";
   UTF8String Utf8Body = UTF8String(JsonBody);
   
   // Set content-type header
@@ -420,7 +428,7 @@ void __fastcall TWebSocketProxyServer::BridgeData()
   u_long mode = 1;
   ioctlsocket(FClientSocket, FIONBIO, &mode);
   
-  while (!FStopping)
+  while (!FStopping && FClientSocket != INVALID_SOCKET && FWebSocketHandle != NULL)
   {
     // Check for data from TCP client
     int bytesRead = recv(FClientSocket, buffer.get(), BUFFER_SIZE, 0);
@@ -443,6 +451,15 @@ void __fastcall TWebSocketProxyServer::BridgeData()
       // Connection closed
       break;
     }
+    else if (bytesRead == SOCKET_ERROR)
+    {
+      int error = WSAGetLastError();
+      if (error != WSAEWOULDBLOCK)
+      {
+        // Real error occurred
+        break;
+      }
+    }
     
     // Check for data from WebSocket
     BYTE wsBuffer[BUFFER_SIZE];
@@ -459,7 +476,10 @@ void __fastcall TWebSocketProxyServer::BridgeData()
     if (dwError == ERROR_SUCCESS && dwBytesRead > 0)
     {
       // Forward to TCP client
-      send(FClientSocket, (const char*)wsBuffer, dwBytesRead, 0);
+      if (FClientSocket != INVALID_SOCKET)
+      {
+        send(FClientSocket, (const char*)wsBuffer, dwBytesRead, 0);
+      }
     }
     else if (dwError != ERROR_WINHTTP_TIMEOUT)
     {
@@ -471,7 +491,7 @@ void __fastcall TWebSocketProxyServer::BridgeData()
     }
     
     // Small delay to avoid busy waiting
-    Sleep(1);
+    Sleep(10);
   }
 }
 //---------------------------------------------------------------------------

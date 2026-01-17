@@ -1573,10 +1573,12 @@ void __fastcall TTerminal::Open()
                   FSecureShell = NULL; // ownership passed
                   LogEvent(L"Using SFTP protocol via HTTP proxy.");
                 }
-                __finally
+                catch (...)
                 {
+                  // Cleanup on error
                   delete FSecureShell;
                   FSecureShell = NULL;
+                  throw;
                 }
               }
               __finally
