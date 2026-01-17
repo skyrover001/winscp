@@ -13,8 +13,8 @@
 enum TCipher { cipWarn, cip3DES, cipBlowfish, cipAES, cipDES, cipArcfour, cipChaCha20, cipAESGCM, cipCount };
 #define CIPHER_COUNT (cipCount)
 // explicit values to skip obsoleted fsExternalSSH, fsExternalSFTP
-enum TFSProtocol { fsSCPonly = 0, fsSFTP = 1, fsSFTPonly = 2, fsFTP = 5, fsWebDAV = 6, fsS3 = 7 };
-#define FSPROTOCOL_COUNT (fsS3+1)
+enum TFSProtocol { fsSCPonly = 0, fsSFTP = 1, fsSFTPonly = 2, fsFTP = 5, fsWebDAV = 6, fsS3 = 7, fsHTTP = 8 };
+#define FSPROTOCOL_COUNT (fsHTTP+1)
 extern const wchar_t * ProxyMethodNames;
 enum TProxyMethod { pmNone, pmSocks4, pmSocks5, pmHTTP, pmTelnet, pmCmd };
 enum TKex { kexWarn, kexDHGroup1, kexDHGroup14, kexDHGroup15, kexDHGroup16, kexDHGroup17, kexDHGroup18, kexDHGEx, kexRSA, kexECDH, kexNTRUHybrid, kexMLKEM25519Hybrid, kexMLKEMNISTHybrid, kexCount };
@@ -91,6 +91,8 @@ extern const UnicodeString FtpesProtocol;
 extern const UnicodeString WebDAVProtocol;
 extern const UnicodeString WebDAVSProtocol;
 extern const UnicodeString S3Protocol;
+extern const UnicodeString HttpProtocol;
+extern const UnicodeString HttpsProtocol;
 extern const UnicodeString SshProtocol;
 extern const UnicodeString WinSCPProtocolPrefix;
 extern const wchar_t UrlParamSeparator;
@@ -253,6 +255,7 @@ private:
   RawByteString FEncryptKey;
   bool FWebDavLiberalEscaping;
   bool FWebDavAuthLegacy;
+  UnicodeString FBackendUrl;
 
   UnicodeString FOrigHostName;
   int FOrigPortNumber;
@@ -450,6 +453,7 @@ private:
   void __fastcall SetEncryptKey(UnicodeString value);
   void __fastcall SetWebDavLiberalEscaping(bool value);
   void __fastcall SetWebDavAuthLegacy(bool value);
+  void __fastcall SetBackendUrl(UnicodeString value);
 
   TDateTime __fastcall GetTimeoutDT();
   void __fastcall SavePasswords(THierarchicalStorage * Storage, bool PuttyExport, bool DoNotEncryptPasswords, bool SaveAll);
@@ -739,6 +743,7 @@ public:
   __property UnicodeString EncryptKey = { read = GetEncryptKey, write = SetEncryptKey };
   __property bool WebDavLiberalEscaping = { read = FWebDavLiberalEscaping, write = SetWebDavLiberalEscaping };
   __property bool WebDavAuthLegacy = { read = FWebDavAuthLegacy, write = SetWebDavAuthLegacy };
+  __property UnicodeString BackendUrl = { read = FBackendUrl, write = SetBackendUrl };
 
   __property UnicodeString StorageKey = { read = GetStorageKey };
   __property UnicodeString SiteKey = { read = GetSiteKey };
