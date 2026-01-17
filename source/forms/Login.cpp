@@ -2694,7 +2694,14 @@ void __fastcall TLoginDialog::PortNumberEditChange(TObject * Sender)
     }
     else if (PortNumber == HTTPPortNumber)
     {
-      FSProtocol = (CurrentFSProtocol == fsS3) ? fsS3 : fsWebDAV;
+      if (CurrentFSProtocol == fsHTTP)
+      {
+        FSProtocol = fsHTTP;
+      }
+      else
+      {
+        FSProtocol = (CurrentFSProtocol == fsS3) ? fsS3 : fsWebDAV;
+      }
       WellKnownPort = true;
     }
     else if (PortNumber == HTTPSPortNumber)

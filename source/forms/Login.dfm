@@ -218,7 +218,7 @@ object LoginDialog: TLoginDialog
             Height = 23
             Anchors = [akLeft, akTop, akRight]
             TabOrder = 0
-            Text = 'BackendUrlEdit'
+            TextHint = 'https://backend.example.com'
             OnChange = DataChange
           end
         end

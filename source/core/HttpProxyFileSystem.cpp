@@ -43,16 +43,34 @@ void __fastcall THttpProxyFileSystem::Open()
     throw Exception(L"Backend URL is required for HTTP protocol");
   }
   
-  // Perform HTTP login
-  DoHttpLogin();
+  FTerminal->LogEvent(L"HTTP Protocol: This is a skeleton implementation");
+  FTerminal->LogEvent(L"The following features are not yet implemented:");
+  FTerminal->LogEvent(L"  - HTTP authentication");
+  FTerminal->LogEvent(L"  - WebSocket connection");
+  FTerminal->LogEvent(L"  - SFTP command proxying");
+  FTerminal->LogEvent(L"To complete this implementation, WebSocket library integration is required.");
   
-  // Connect WebSocket
-  ConnectWebSocket();
+  // Note: DoHttpLogin and ConnectWebSocket will throw exceptions
+  // indicating they are not implemented. This prevents actual connection attempts.
   
-  FActive = true;
-  
-  // Read home directory
-  ReadCurrentDirectory();
+  try
+  {
+    // Perform HTTP login (not implemented - will throw)
+    DoHttpLogin();
+    
+    // Connect WebSocket (not implemented - will throw)
+    ConnectWebSocket();
+    
+    FActive = true;
+    
+    // Read home directory
+    ReadCurrentDirectory();
+  }
+  catch (Exception & E)
+  {
+    FActive = false;
+    throw;
+  }
 }
 //------------------------------------------------------------------------------
 void __fastcall THttpProxyFileSystem::Close()
@@ -367,8 +385,18 @@ void __fastcall THttpProxyFileSystem::DoHttpLogin()
   // For now, just log the attempt
   FTerminal->LogEvent(FORMAT(L"Authenticating to HTTP backend: %s", (FBackendUrl)));
   
-  // Simulate successful login with a dummy token
-  FSessionToken = L"dummy-session-token";
+  // TODO: Replace with actual HTTP authentication implementation
+  // This is a placeholder - DO NOT USE IN PRODUCTION
+  // Expected implementation:
+  // 1. Send HTTP POST request to {FBackendUrl}/login
+  // 2. Include JSON body: {"username": "xxx", "password": "xxx"}
+  // 3. Parse JSON response to extract session token
+  // 4. Store token in FSessionToken
+  // 5. Handle errors (network, authentication failure, etc.)
+  
+  FSessionToken = L""; // Clear token - authentication not implemented
+  
+  throw Exception(L"HTTP authentication not implemented. This is a skeleton implementation.");
 }
 //------------------------------------------------------------------------------
 void __fastcall THttpProxyFileSystem::ConnectWebSocket()
@@ -377,8 +405,17 @@ void __fastcall THttpProxyFileSystem::ConnectWebSocket()
   // For now, just log the attempt
   FTerminal->LogEvent(FORMAT(L"Connecting to WebSocket endpoint: %s/ws_proxy", (FBackendUrl)));
   
-  // Simulate successful connection
-  FWebSocketHandle = (void *)1; // Non-null to indicate connected
+  // TODO: Replace with actual WebSocket implementation
+  // Expected implementation:
+  // 1. Initialize WebSocket library (WinHTTP or libwebsockets)
+  // 2. Construct WebSocket URL with token parameter
+  // 3. Perform WebSocket handshake
+  // 4. Store connection handle in FWebSocketHandle
+  // 5. Handle errors (connection failure, timeout, etc.)
+  
+  FWebSocketHandle = NULL; // No connection - WebSocket not implemented
+  
+  throw Exception(L"WebSocket connection not implemented. This is a skeleton implementation.");
 }
 //------------------------------------------------------------------------------
 void __fastcall THttpProxyFileSystem::SendWebSocketData(const void * Data, int Len)
