@@ -192,6 +192,36 @@ object LoginDialog: TLoginDialog
             OnChange = S3ProfileComboChange
           end
         end
+        object BasicHttpPanel: TPanel
+          Left = 8
+          Top = 192
+          Width = 374
+          Height = 31
+          Anchors = [akLeft, akTop, akRight]
+          BevelOuter = bvNone
+          TabOrder = 12
+          DesignSize = (
+            374
+            31)
+          object BackendUrlLabel: TLabel
+            Left = 2
+            Top = 7
+            Width = 65
+            Height = 15
+            Caption = 'Backend &URL:'
+            FocusControl = BackendUrlEdit
+          end
+          object BackendUrlEdit: TEdit
+            Left = 73
+            Top = 3
+            Width = 301
+            Height = 23
+            Anchors = [akLeft, akTop, akRight]
+            TabOrder = 0
+            Text = 'BackendUrlEdit'
+            OnChange = DataChange
+          end
+        end
         object EncryptionView: TEdit
           Left = 178
           Top = 40
@@ -266,7 +296,8 @@ object LoginDialog: TLoginDialog
             'SCP'
             'FTP'
             'WebDAV'
-            'Amazon S3')
+            'Amazon S3'
+            'HTTP')
         end
         object FtpsCombo: TComboBox
           Left = 178
