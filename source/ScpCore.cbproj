@@ -206,6 +206,9 @@
             <BuildOrder>42</BuildOrder>
             <BuildOrder>23</BuildOrder>
         </CppCompile>
+        <CppCompile Include="core\WebSocketProxyServer.cpp">
+            <BuildOrder>43</BuildOrder>
+        </CppCompile>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>
         </BuildConfiguration>
