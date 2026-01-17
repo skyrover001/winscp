@@ -336,6 +336,7 @@ private:
   TIncrementalSearch FSiteSearch;
   TForm * FLinkedForm;
   TPoint FPrevPos;
+  UnicodeString FLabel1Caption;
   UnicodeString FUserNameLabel;
   UnicodeString FPasswordLabel;
   int FFixedSessionImages;

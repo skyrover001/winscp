@@ -47,7 +47,7 @@ const THostKey DefaultHostKeyList[HOSTKEY_COUNT] =
   { hkED448, hkED25519, hkECDSA, hkRSA, hkDSA, hkWarn };
 const TGssLib DefaultGssLibList[GSSLIB_COUNT] =
   { gssGssApi32, gssSspi, gssCustom };
-const wchar_t FSProtocolNames[FSPROTOCOL_COUNT][16] = { L"SCP", L"SFTP (SCP)", L"SFTP", L"", L"", L"FTP", L"WebDAV", L"S3" };
+const wchar_t FSProtocolNames[FSPROTOCOL_COUNT][16] = { L"SCP", L"SFTP (SCP)", L"SFTP", L"", L"", L"FTP", L"WebDAV", L"S3", L"HTTP" };
 const int SshPortNumber = 22;
 const int FtpPortNumber = 21;
 const int FtpsImplicitPortNumber = 990;
@@ -232,6 +232,8 @@ void __fastcall TSessionData::DefaultSettings()
 
   WebDavLiberalEscaping = false;
   WebDavAuthLegacy = false;
+
+  ProxyServerUrl = L"";
 
   ProxyMethod = ::pmNone;
   ProxyHost = L"proxy";
@@ -539,6 +541,7 @@ void __fastcall TSessionData::NonPersistent()
   \
   PROPERTY(WebDavLiberalEscaping); \
   PROPERTY(WebDavAuthLegacy); \
+  PROPERTY(ProxyServerUrl); \
   \
   PROPERTY(PuttySettings); \
   \
@@ -944,6 +947,7 @@ void __fastcall TSessionData::DoLoad(THierarchicalStorage * Storage, bool PuttyI
 
   WebDavLiberalEscaping = Storage->ReadBool(L"WebDavLiberalEscaping", WebDavLiberalEscaping);
   WebDavAuthLegacy = Storage->ReadBool(L"WebDavAuthLegacy", WebDavAuthLegacy);
+  ProxyServerUrl = Storage->ReadString(L"ProxyServerUrl", ProxyServerUrl);
 
   IsWorkspace = Storage->ReadBool(L"IsWorkspace", IsWorkspace);
   Link = Storage->ReadString(L"Link", Link);
@@ -1253,6 +1257,7 @@ void __fastcall TSessionData::DoSave(THierarchicalStorage * Storage,
 
     WRITE_DATA(Bool, WebDavLiberalEscaping);
     WRITE_DATA(Bool, WebDavAuthLegacy);
+    WRITE_DATA_EX(String, ProxyServerUrl);
 
     WRITE_DATA(Bool, IsWorkspace);
     WRITE_DATA(String, Link);
@@ -4665,6 +4670,11 @@ void __fastcall TSessionData::SetWebDavAuthLegacy(bool value)
   SET_SESSION_PROPERTY(WebDavAuthLegacy);
 }
 //---------------------------------------------------------------------
+void __fastcall TSessionData::SetProxyServerUrl(UnicodeString value)
+{
+  SET_SESSION_PROPERTY(ProxyServerUrl);
+}
+//---------------------------------------------------------------------
 UnicodeString __fastcall TSessionData::GetInfoTip()
 {
   if (UsesSsh)
@@ -5923,6 +5933,10 @@ int __fastcall DefaultPort(TFSProtocol FSProtocol, TFtps Ftps)
       {
         Result = HTTPSPortNumber;
       }
+      break;
+
+    case fsHTTP:
+      Result = HTTPPortNumber;
       break;
 
     default:

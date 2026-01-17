@@ -55,7 +55,7 @@ bool __fastcall DoLoginDialog(TList * DataList, TForm * LinkedForm)
   return Result;
 }
 //---------------------------------------------------------------------
-static const TFSProtocol FSOrder[] = { fsSFTPonly, fsSCPonly, fsFTP, fsWebDAV, fsS3 };
+static const TFSProtocol FSOrder[] = { fsSFTPonly, fsSCPonly, fsFTP, fsWebDAV, fsS3, fsHTTP };
 //---------------------------------------------------------------------
 __fastcall TLoginDialog::TLoginDialog(TComponent* AOwner)
         : TForm(AOwner)
@@ -87,6 +87,7 @@ __fastcall TLoginDialog::TLoginDialog(TComponent* AOwner)
 
   FBasicGroupBaseHeight = BasicGroup->Height - BasicSshPanel->Height - BasicFtpPanel->Height - BasicS3Panel->Height;
   FNoteGroupOffset = NoteGroup->Top - (BasicGroup->Top + BasicGroup->Height);
+  FLabel1Caption = Label1->Caption;
   FUserNameLabel = UserNameLabel->Caption;
   FPasswordLabel = PasswordLabel->Caption;
 
@@ -540,7 +541,15 @@ void __fastcall TLoginDialog::LoadSession(TSessionData * SessionData)
     TransferProtocolView->Text = TransferProtocolCombo->Text;
 
     // Only after loading TransferProtocolCombo, so that we do not overwrite it with S3 defaults in TransferProtocolComboChange
-    HostNameEdit->Text = SessionData->HostName;
+    if (SessionData->FSProtocol == fsHTTP)
+    {
+      // For HTTP protocol, use HostNameEdit for proxy server URL
+      HostNameEdit->Text = SessionData->ProxyServerUrl;
+    }
+    else
+    {
+      HostNameEdit->Text = SessionData->HostName;
+    }
     UserNameEdit->Text = SessionData->UserName;
 
     bool Editable = IsEditable();
@@ -623,9 +632,22 @@ void __fastcall TLoginDialog::SaveSession(TSessionData * SessionData)
   }
 
   SessionData->PortNumber = PortNumberEdit->AsInteger;
-  // Must be set after UserName, because HostName may be in format user@host,
-  // Though now we parse the hostname right on this dialog (see HostNameEditExit), this is unlikely to ever be triggered.
-  SessionData->HostName = HostNameEdit->Text.Trim();
+  
+  // Handle HTTP protocol
+  if (SessionData->FSProtocol == fsHTTP)
+  {
+    // For HTTP protocol, HostNameEdit contains the proxy server URL
+    SessionData->ProxyServerUrl = HostNameEdit->Text.Trim();
+    // Set empty hostname for HTTP protocol to avoid confusion
+    SessionData->HostName = L"";
+  }
+  else
+  {
+    // Must be set after UserName, because HostName may be in format user@host,
+    // Though now we parse the hostname right on this dialog (see HostNameEditExit), this is unlikely to ever be triggered.
+    SessionData->HostName = HostNameEdit->Text.Trim();
+  }
+  
   SessionData->Ftps = GetFtps();
 
   TSessionData * EditingSessionData = GetEditingSessionData();
@@ -675,6 +697,7 @@ void __fastcall TLoginDialog::UpdateControls()
     bool FtpProtocol = (FSProtocol == fsFTP);
     bool WebDavProtocol = (FSProtocol == fsWebDAV);
     bool S3Protocol = (FSProtocol == fsS3);
+    bool HttpProtocol = (FSProtocol == fsHTTP);
 
     // session
     FtpsCombo->Visible = Editable && FtpProtocol;
@@ -683,7 +706,7 @@ void __fastcall TLoginDialog::UpdateControls()
     WebDavsLabel->Visible = WebDavProtocol || S3Protocol;
     EncryptionView->Visible = !Editable && (FtpProtocol || WebDavProtocol || S3Protocol);
 
-    BasicSshPanel->Visible = SshProtocol;
+    BasicSshPanel->Visible = SshProtocol && !HttpProtocol;
     BasicFtpPanel->Visible = FtpProtocol && Editable;
     BasicS3Panel->Visible = S3Protocol && Editable;
     if (BasicS3Panel->Visible && (S3ProfileCombo->Items->Count == 0))
@@ -707,8 +730,17 @@ void __fastcall TLoginDialog::UpdateControls()
     TransferProtocolCombo->Visible = Editable;
     TransferProtocolView->Visible = !TransferProtocolCombo->Visible;
     ReadOnlyControl(HostNameEdit, !Editable);
-    ReadOnlyControl(PortNumberEdit, !Editable);
-    PortNumberEdit->ButtonsVisible = Editable;
+    
+    // Hide port number for HTTP protocol
+    bool ShowPort = !HttpProtocol;
+    PortNumberEdit->Visible = ShowPort;
+    Label22->Visible = ShowPort;
+    if (ShowPort)
+    {
+      ReadOnlyControl(PortNumberEdit, !Editable);
+      PortNumberEdit->ButtonsVisible = Editable;
+    }
+    
     // FSessionData may be NULL temporary even when Editable while switching nodes
     bool S3CredentialsEnv = S3Protocol && S3CredentialsEnvCheck3->Checked;
     bool NoAuth =
@@ -721,6 +753,17 @@ void __fastcall TLoginDialog::UpdateControls()
     EnableControl(PasswordLabel, PasswordEdit->Enabled);
     UserNameLabel->Caption = S3Protocol ? LoadStr(S3_ACCESS_KEY_ID_PROMPT) : FUserNameLabel;
     PasswordLabel->Caption = S3Protocol ? LoadStr(S3_SECRET_ACCESS_KEY_PROMPT) : FPasswordLabel;
+    
+    // Update label for HTTP protocol
+    if (HttpProtocol)
+    {
+      Label1->Caption = L"Proxy Server URL:";
+    }
+    else if (Label1->Caption != FLabel1Caption)
+    {
+      Label1->Caption = FLabel1Caption;
+    }
+    
     EnableControl(S3ProfileCombo, S3CredentialsEnv);
 
     // sites

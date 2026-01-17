@@ -20,6 +20,7 @@
 #include "FtpFileSystem.h"
 #include "WebDAVFileSystem.h"
 #include "S3FileSystem.h"
+#include "WebSocketProxyServer.h"
 #include "TextsCore.h"
 #include "HelpCore.h"
 #include "CoreMain.h"
@@ -1262,6 +1263,7 @@ __fastcall TTerminal::TTerminal(TSessionData * SessionData, TConfiguration * Con
   FTunnelLog = NULL;
   FTunnelUI = NULL;
   FTunnelOpening = false;
+  FWebSocketProxy = NULL;
   FCallbackGuard = NULL;
   FNesting = 0;
   FRememberedPasswordKind = TPromptKind(-1);
@@ -1402,6 +1404,14 @@ void __fastcall TTerminal::Close()
 {
   FFileSystem->Close();
 
+  // Cleanup WebSocket proxy if it was used
+  if (FWebSocketProxy != NULL)
+  {
+    FWebSocketProxy->Stop();
+    delete FWebSocketProxy;
+    FWebSocketProxy = NULL;
+  }
+
   // Cannot rely on CommandSessionOpened here as Status is set to ssClosed too late
   if ((FCommandSession != NULL) && FCommandSession->Active)
   {
@@ -1510,7 +1520,75 @@ void __fastcall TTerminal::Open()
 
           if (FFileSystem == NULL)
           {
-            if (SessionData->FSProtocol == fsFTP)
+            if (SessionData->FSProtocol == fsHTTP)
+            {
+              // HTTP protocol: start WebSocket proxy
+              LogEvent(L"Using HTTP protocol with WebSocket proxy.");
+              
+              FWebSocketProxy = new TWebSocketProxyServer(
+                SessionData->ProxyServerUrl,
+                SessionData->UserName,
+                SessionData->Password);
+              
+              if (!FWebSocketProxy->Start())
+              {
+                delete FWebSocketProxy;
+                FWebSocketProxy = NULL;
+                throw Exception(L"Failed to start WebSocket proxy server");
+              }
+              
+              // Create modified session data to connect via local proxy
+              TSessionData * ProxySessionData = new TSessionData(L"");
+              ProxySessionData->Assign(SessionData);
+              ProxySessionData->HostName = L"127.0.0.1";
+              ProxySessionData->PortNumber = FWebSocketProxy->GetLocalPort();
+              ProxySessionData->FSProtocol = fsSFTPonly;
+              
+              // Temporarily replace session data
+              TSessionData * OriginalSessionData = FSessionData;
+              FSessionData = ProxySessionData;
+              
+              try
+              {
+                // Connect via SFTP to local proxy
+                DebugAssert(FSecureShell == NULL);
+                try
+                {
+                  FSecureShell = new TSecureShell(this, FSessionData, Log, Configuration);
+                  try
+                  {
+                    FSecureShell->Simple = true;
+                    FSecureShell->Open();
+                  }
+                  catch(Exception & E)
+                  {
+                    DebugAssert(!FSecureShell->Active);
+                    throw;
+                  }
+                  
+                  Log->AddSeparator();
+                  
+                  FFSProtocol = cfsSFTP;
+                  FFileSystem = new TSFTPFileSystem(this, FSecureShell);
+                  FSecureShell = NULL; // ownership passed
+                  LogEvent(L"Using SFTP protocol via HTTP proxy.");
+                }
+                catch (...)
+                {
+                  // Cleanup on error
+                  delete FSecureShell;
+                  FSecureShell = NULL;
+                  throw;
+                }
+              }
+              __finally
+              {
+                // Restore original session data
+                delete FSessionData;
+                FSessionData = OriginalSessionData;
+              }
+            }
+            else if (SessionData->FSProtocol == fsFTP)
             {
               FFSProtocol = cfsFTP;
               FFileSystem = new TFTPFileSystem(this);
