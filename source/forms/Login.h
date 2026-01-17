@@ -218,6 +218,9 @@ __published:
   TCheckBox *S3CredentialsEnvCheck3;
   TMenuItem *OpeninPuTTY4;
   TComboBox *S3ProfileCombo;
+  TPanel *BasicHttpPanel;
+  TLabel *BackendUrlLabel;
+  TEdit *BackendUrlEdit;
   TPanel *SitesIncrementalSearchPanel;
   TStaticText *SitesIncrementalSearchBorderLabel;
   TStaticText *SitesIncrementalSearchLabel;

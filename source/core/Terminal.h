@@ -97,7 +97,7 @@ const unsigned int folRetryOnFatal = 0x02;
 #define FILE_OPERATION_LOOP_END(MESSAGE) \
   FILE_OPERATION_LOOP_END_EX(MESSAGE, folAllowSkip)
 //---------------------------------------------------------------------------
-enum TCurrentFSProtocol { cfsUnknown, cfsSCP, cfsSFTP, cfsFTP, cfsWebDAV, cfsS3 };
+enum TCurrentFSProtocol { cfsUnknown, cfsSCP, cfsSFTP, cfsFTP, cfsWebDAV, cfsS3, cfsHTTP };
 //---------------------------------------------------------------------------
 const int cpDelete = 0x01;
 const int cpTemporary = 0x04;

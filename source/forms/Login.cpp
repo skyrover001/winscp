@@ -55,7 +55,7 @@ bool __fastcall DoLoginDialog(TList * DataList, TForm * LinkedForm)
   return Result;
 }
 //---------------------------------------------------------------------
-static const TFSProtocol FSOrder[] = { fsSFTPonly, fsSCPonly, fsFTP, fsWebDAV, fsS3 };
+static const TFSProtocol FSOrder[] = { fsSFTPonly, fsSCPonly, fsFTP, fsWebDAV, fsS3, fsHTTP };
 //---------------------------------------------------------------------
 __fastcall TLoginDialog::TLoginDialog(TComponent* AOwner)
         : TForm(AOwner)
@@ -85,7 +85,7 @@ __fastcall TLoginDialog::TLoginDialog(TComponent* AOwner)
   FFixedSessionImages = SessionImageList->Count;
   DebugAssert(SiteColorMaskImageIndex == FFixedSessionImages - 1);
 
-  FBasicGroupBaseHeight = BasicGroup->Height - BasicSshPanel->Height - BasicFtpPanel->Height - BasicS3Panel->Height;
+  FBasicGroupBaseHeight = BasicGroup->Height - BasicSshPanel->Height - BasicFtpPanel->Height - BasicS3Panel->Height - BasicHttpPanel->Height;
   FNoteGroupOffset = NoteGroup->Top - (BasicGroup->Top + BasicGroup->Height);
   FUserNameLabel = UserNameLabel->Caption;
   FPasswordLabel = PasswordLabel->Caption;
@@ -142,6 +142,7 @@ void __fastcall TLoginDialog::InitControls()
 
   BasicSshPanel->Top = BasicFtpPanel->Top;
   BasicS3Panel->Top = BasicFtpPanel->Top;
+  BasicHttpPanel->Top = BasicFtpPanel->Top;
 
   SitesIncrementalSearchPanel->Left = SessionTree->Left;
   SitesIncrementalSearchPanel->Width = SessionTree->Width;
@@ -558,6 +559,8 @@ void __fastcall TLoginDialog::LoadSession(TSessionData * SessionData)
     S3CredentialsEnvCheck3->Checked = SessionData->S3CredentialsEnv;
     S3ProfileCombo->Text = DefaultStr(SessionData->S3Profile, GetS3GeneralName());
     UpdateS3Credentials();
+    
+    BackendUrlEdit->Text = SessionData->BackendUrl;
 
     NoteGroup->Visible = !Trim(SessionData->Note).IsEmpty();
     NoteMemo->Lines->Text = SessionData->Note;
@@ -608,6 +611,11 @@ void __fastcall TLoginDialog::SaveSession(TSessionData * SessionData)
   {
     SessionData->S3CredentialsEnv = S3CredentialsEnvCheck3->Checked;
     SessionData->S3Profile = GetS3Profile();
+  }
+  
+  if (SessionData->FSProtocol == fsHTTP)
+  {
+    SessionData->BackendUrl = BackendUrlEdit->Text.Trim();
   }
 
   if (SessionData->HasAutoCredentials())
@@ -675,6 +683,7 @@ void __fastcall TLoginDialog::UpdateControls()
     bool FtpProtocol = (FSProtocol == fsFTP);
     bool WebDavProtocol = (FSProtocol == fsWebDAV);
     bool S3Protocol = (FSProtocol == fsS3);
+    bool HttpProtocol = (FSProtocol == fsHTTP);
 
     // session
     FtpsCombo->Visible = Editable && FtpProtocol;
@@ -686,17 +695,19 @@ void __fastcall TLoginDialog::UpdateControls()
     BasicSshPanel->Visible = SshProtocol;
     BasicFtpPanel->Visible = FtpProtocol && Editable;
     BasicS3Panel->Visible = S3Protocol && Editable;
+    BasicHttpPanel->Visible = HttpProtocol && Editable;
     if (BasicS3Panel->Visible && (S3ProfileCombo->Items->Count == 0))
     {
       LoadS3Profiles();
     }
     // we do not support more than one at the same time
-    DebugAssert((int(BasicSshPanel->Visible) + int(BasicFtpPanel->Visible) + int(BasicS3Panel->Visible)) <= 1);
+    DebugAssert((int(BasicSshPanel->Visible) + int(BasicFtpPanel->Visible) + int(BasicS3Panel->Visible) + int(BasicHttpPanel->Visible)) <= 1);
     BasicGroup->Height =
       FBasicGroupBaseHeight +
       (BasicSshPanel->Visible ? BasicSshPanel->Height : 0) +
       (BasicFtpPanel->Visible ? BasicFtpPanel->Height : 0) +
-      (BasicS3Panel->Visible ? BasicS3Panel->Height : 0);
+      (BasicS3Panel->Visible ? BasicS3Panel->Height : 0) +
+      (BasicHttpPanel->Visible ? BasicHttpPanel->Height : 0);
     int NoteGroupTop = (BasicGroup->Top + BasicGroup->Height) + FNoteGroupOffset;
     NoteGroup->SetBounds(
       NoteGroup->Left, (BasicGroup->Top + BasicGroup->Height) + FNoteGroupOffset,
@@ -2683,7 +2694,14 @@ void __fastcall TLoginDialog::PortNumberEditChange(TObject * Sender)
     }
     else if (PortNumber == HTTPPortNumber)
     {
-      FSProtocol = (CurrentFSProtocol == fsS3) ? fsS3 : fsWebDAV;
+      if (CurrentFSProtocol == fsHTTP)
+      {
+        FSProtocol = fsHTTP;
+      }
+      else
+      {
+        FSProtocol = (CurrentFSProtocol == fsS3) ? fsS3 : fsWebDAV;
+      }
       WellKnownPort = true;
     }
     else if (PortNumber == HTTPSPortNumber)
