@@ -757,7 +757,7 @@ void __fastcall TLoginDialog::UpdateControls()
     // Update label for HTTP protocol
     if (HttpProtocol)
     {
-      Label1->Caption = LoadStr(L"Proxy Server URL:");
+      Label1->Caption = L"Proxy Server URL:";
     }
     else if (Label1->Caption != FLabel1Caption)
     {
